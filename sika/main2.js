@@ -1,3 +1,5 @@
+import { FRUITS } from "./fruits.js";
+
 var Engine = Matter.Engine,
     Render= Matter.Render,
     Runner= Matter.Runner,
@@ -25,6 +27,7 @@ const floorWall = Bodies.rectangle(310, 820, 620, 60, {
 
 const topline = Bodies.rectangle(310, 150, 620, 3, {
     isStatic : true,
+    isSensor : false, 
     render: { fillStyle: '#E6B143' }
 })
 
@@ -48,3 +51,31 @@ World.add(world, [topline])
 Render.run(render);
 Runner.run(engine);
 
+
+
+let currentBody = null;
+let currentFruits = null;
+
+function addFruits()
+{
+    const index = Math.floor(Math.random() * 5);
+    const fruit = FRUITS[index];
+
+    const body = Bodies.circle(300, 50, fruit.radius, {
+        index: index,
+        isSleeping: true,
+        render: {
+            sprite: {
+                texture: `${fruit.name}.png`
+            }
+        },
+        restitution: 0.2,
+    });
+
+    currentBody = body;
+    currentFruits = fruit.index;
+
+    World.add(world, body);
+}
+
+addFruits();
