@@ -67,6 +67,8 @@ let currentFruits = null;
 // 키보드 입력 제한
 let disableAction = false;
 
+let interver = null;
+
 // 랜덤 과일 생성 함수
 function addFruits()
 {
@@ -108,6 +110,7 @@ window.onkeydown = (event) => {
     {
         // 과일 왼쪽 이동
         case "KeyA":
+            if ( currentBody.position.x - currentFruit.radius > 30)
             Body.setPosition(currentBody, {
                 x: currentBody.position.x - 10,
                 y: currentBody.position.y
@@ -116,6 +119,7 @@ window.onkeydown = (event) => {
 
         // 과일 오른쪽 이동
         case "KeyD":
+            if ( currentBody.position.x + currentFruit.radius < 590)
             Body.setPosition(currentBody, {
                 x: currentBody.position.x + 10,
                 y: currentBody.position.y
