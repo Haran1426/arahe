@@ -1,13 +1,584 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+
+    <title>JUICY LAB</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green: #a6e775;
+            --panel: #1c2330;
+            --border: #374151;
+            --muted: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(
+                ellipse at top,
+                #263c30,
+                #10151c 75%
+            );
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ffffff15;
+        }
+
+        header a {
+            color: var(--green);
+            text-decoration: none;
+        }
+
+        .logo {
+            font-size: 13px;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        .title {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .title h1 {
+            margin: 0;
+            color: var(--green);
+            font-size: 42px;
+            letter-spacing: 5px;
+        }
+
+        .title p {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 190px minmax(0, 460px) 190px;
+            justify-content: center;
+            align-items: start;
+            gap: 16px;
+            padding: 0 15px 35px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 17px;
+            margin-bottom: 14px;
+        }
+
+        .panel h3 {
+            margin: 0 0 15px;
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        #score {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--green);
+        }
+
+        #best {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        #combo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .preview {
+            height: 100px;
+            background: #121924;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+        }
+
+        .preview img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .preview span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* 게임 화면 */
+        #board {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 620 / 850;
+            background: #192c25;
+            border: 3px solid #577b5d;
+            border-radius: 18px;
+            overflow: hidden;
+            touch-action: none;
+            box-shadow: 0 15px 40px #0005;
+        }
+
+        #board canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* 게임 로딩 화면 */
+        #loading {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            text-align: center;
+            color: var(--green);
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 14px;
+            line-height: 1.7;
+            z-index: 20;
+        }
+
+        /* 게임 알림 */
+        #message {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            white-space: pre-line;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff2a8;
+            text-shadow: 0 4px 10px #000;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #message:empty {
+            display: none;
+        }
+
+        /* 조작 버튼 */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        button {
+            background: #303c4c;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 14px 8px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: none;
+            transition: 0.15s;
+        }
+
+        button:hover {
+            background: #475569;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #drop {
+            background: var(--green);
+            color: #17291b;
+            border-color: var(--green);
+        }
+
+        #drop:hover {
+            background: #c1f59d;
+        }
+
+        .wide {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 12px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 흔들기 에너지 */
+        .energy-track {
+            height: 10px;
+            background: #111827;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        #energy-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                #60a5fa,
+                #a6e775
+            );
+            transition: width 0.2s;
+        }
+
+        /* 과일 진화 목록 */
+        #evolution {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        #evolution img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .key-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        kbd {
+            padding: 5px 8px;
+            background: #303c4c;
+            border: 1px solid #64748b;
+            border-bottom-width: 3px;
+            border-radius: 5px;
+        }
+
+        .help {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        /* 모바일 화면 */
+        @media (max-width: 850px) {
+            .layout {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                margin: auto;
+            }
+
+            .left-panel {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .right-panel {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .panel {
+                margin: 0;
+            }
+
+            .title h1 {
+                font-size: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 15px;
+            }
+
+            .layout {
+                padding: 0 10px 20px;
+            }
+
+            .panel {
+                padding: 12px;
+            }
+
+            #score {
+                font-size: 28px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <script src="/sika/matter.js"></script>
-    <script type="module" src="/sika/main2.js"></script>
-    <script type="module" src="/sika/fruits.js"></script>
+
+    <!-- 상단 메뉴 -->
+    <header>
+        <div class="logo">IG STUDIO</div>
+        <a href="../index.html">← 게임 목록</a>
+    </header>
+
+    <!-- 게임 제목 -->
+    <div class="title">
+        <h1>JUICY LAB</h1>
+        <p>FRUIT MERGE LABORATORY / 과일 합체 연구소</p>
+    </div>
+
+    <main class="layout">
+
+        <!-- 왼쪽 정보 패널 -->
+        <aside class="left-panel">
+
+            <div class="panel">
+                <h3>SCORE</h3>
+                <div id="score">0</div>
+            </div>
+
+            <div class="panel">
+                <h3>BEST SCORE</h3>
+                <div id="best">0</div>
+            </div>
+
+            <div class="panel">
+                <h3>NEXT FRUIT</h3>
+
+                <div class="preview">
+                    <img id="next-fruit"
+                         src="./image/00_cherry.png"
+                         alt="다음 과일">
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>HOLD</h3>
+
+                <div class="preview" id="hold-preview">
+                    <span>EMPTY</span>
+                </div>
+
+                <button id="hold" class="wide">
+                    과일 보관 Q
+                </button>
+            </div>
+
+        </aside>
+
+        <!-- 중앙 게임 화면 -->
+        <section>
+
+            <div id="board">
+
+                <div id="loading">
+                    게임을 불러오는 중...
+                </div>
+
+                <div id="message"></div>
+
+            </div>
+
+            <div class="controls">
+                <button id="left">◀ A</button>
+                <button id="drop">DROP ▼</button>
+                <button id="right">D ▶</button>
+            </div>
+
+            <div id="status">
+                LOADING...
+            </div>
+
+        </section>
+
+        <!-- 오른쪽 기능 패널 -->
+        <aside class="right-panel">
+
+            <div class="panel">
+                <h3>COMBO</h3>
+                <div id="combo">x1</div>
+            </div>
+
+            <div class="panel">
+                <h3>SHAKE ENERGY</h3>
+
+                <span id="energy-text">0%</span>
+
+                <div class="energy-track">
+                    <div id="energy-bar"></div>
+                </div>
+
+                <button id="shake" class="wide">
+                    흔들기 X
+                </button>
+            </div>
+
+            <div class="panel">
+                <h3>EVOLUTION</h3>
+                <div id="evolution"></div>
+            </div>
+
+            <div class="panel">
+                <h3>CONTROLS</h3>
+
+                <div class="key-row">
+                    <span>좌우 이동</span>
+                    <kbd>A / D</kbd>
+                </div>
+
+                <div class="key-row">
+                    <span>떨어뜨리기</span>
+                    <kbd>S</kbd>
+                </div>
+
+                <div class="key-row">
+                    <span>과일 보관</span>
+                    <kbd>Q</kbd>
+                </div>
+
+                <div class="key-row">
+                    <span>흔들기</span>
+                    <kbd>X</kbd>
+                </div>
+
+                <button id="pause" class="wide">
+                    일시정지 P
+                </button>
+
+                <button id="restart" class="wide">
+                    다시 시작 R
+                </button>
+
+                <p class="help">
+                    같은 과일을 합쳐 점수를 획득하세요.
+                    위험선을 3초 이상 넘으면 게임이 종료됩니다.
+                </p>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- 오류 발생 시 화면에 표시 -->
+    <script>
+        window.showGameError = function (message) {
+
+            const loading =
+                document.getElementById("loading");
+
+            loading.style.display = "grid";
+            loading.style.color = "#ff8495";
+            loading.style.background = "#19212d";
+
+            loading.textContent =
+                "게임 실행 오류\n\n" + message;
+
+            document.getElementById("status").textContent =
+                "ERROR";
+        };
+
+        window.addEventListener("error", function (event) {
+
+            window.showGameError(
+                event.message || "파일 로딩 오류"
+            );
+        });
+
+        window.addEventListener(
+            "unhandledrejection",
+            function (event) {
+
+                window.showGameError(
+                    String(event.reason)
+                );
+            }
+        );
+    </script>
+
+    <!-- Matter.js 0.19.0 외부 라이브러리 연결 -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"
+        onerror="showGameError('Matter.js 다운로드 실패')">
+    </script>
+
+    <!-- 게임 코드 실행 -->
+    <script type="module">
+
+        try {
+
+            if (!window.Matter)
+            {
+                throw new Error(
+                    "Matter.js를 불러오지 못했습니다."
+                );
+            }
+
+            console.log(
+                "Matter.js 연결 성공:",
+                window.Matter.version
+            );
+
+            // 게임 코드 불러오기
+            await import("./main2.js");
+
+            // 게임 화면 생성 여부 확인
+            if (!document.querySelector("#board canvas"))
+            {
+                throw new Error(
+                    "게임 Canvas가 생성되지 않았습니다."
+                );
+            }
+
+            // 로딩 화면 제거
+            document.getElementById("loading")
+                .style.display = "none";
+
+            document.getElementById("status")
+                .textContent = "READY TO MERGE";
+
+            console.log("JUICY LAB 실행 성공!");
+
+        }
+        catch (error)
+        {
+            console.error(error);
+
+            window.showGameError(error.message);
+        }
+
+    </script>
+
 </body>
 </html>
